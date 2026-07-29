@@ -12,6 +12,7 @@ import {
   DEFAULT_IMAGES_MODEL,
   DEFAULT_RESPONSES_MODEL,
   DEFAULT_SETTINGS,
+  SSXZ_IMAGE_MODELS,
   findEquivalentApiProfile,
   getApiProviderLabel,
   getActiveApiProfile,
@@ -239,42 +240,8 @@ export default function SettingsModal() {
   const activeCustomProviderAsync = isAsyncCustomProvider(activeCustomProvider)
   const apiProxyChecked = activeProfileApiProxyEligible && (apiProxyLocked || activeProfile.apiProxy)
   const apiProxyEnabled = apiProxyAvailable && activeProfileApiProxyEligible && apiProxyChecked
-  const defaultProviderOrder = ['openai', 'sb2api-async', 'fal', ...draft.customProviders.map(p => p.id)]
-  const providerOrder = draft.providerOrder || defaultProviderOrder
-
-  const unorderedProviderOptions = [
-    { label: 'OpenAI 兼容接口', value: 'openai', draggable: true },
-    { label: 'sub2api（异步）', value: 'sb2api-async', draggable: true },
-    { label: 'fal.ai', value: 'fal', draggable: true },
-    ...draft.customProviders.map((provider) => {
-      const actions = [
-        ...(!presetConfigOnly && !isPresetProviderLocked(provider.id) ? [{ label: '编辑', onClick: () => openEditCustomProvider(provider) }] : []),
-        ...(!presetConfigOnly && !isPresetProviderDeletionPrevented(provider.id, draft.profiles) ? [{
-          label: '删除',
-          variant: 'danger' as const,
-          onClick: () => confirmDeleteCustomProvider(provider),
-        }] : []),
-      ]
-      return {
-        label: provider.name,
-        value: provider.id,
-        draggable: true,
-        actions: actions.length ? actions : undefined,
-      }
-    }),
-  ]
-
   const providerOptions = [
-    ...(!presetConfigOnly && !activeProfileLocked
-      ? [{ label: '创建自定义服务商', value: ADD_CUSTOM_PROVIDER_VALUE, variant: 'action' as const }]
-      : []),
-    ...unorderedProviderOptions.sort((a, b) => {
-      const aIndex = providerOrder.indexOf(String(a.value))
-      const bIndex = providerOrder.indexOf(String(b.value))
-      const validA = aIndex !== -1 ? aIndex : defaultProviderOrder.indexOf(String(a.value))
-      const validB = bIndex !== -1 ? bIndex : defaultProviderOrder.indexOf(String(b.value))
-      return validA - validB
-    })
+    { label: 'SSXZ Images API', value: 'openai' },
   ]
 
   const getDefaultModelForMode = (apiMode: AppSettings['apiMode']) =>
@@ -1509,7 +1476,7 @@ export default function SettingsModal() {
                     onChange={(e) => updateActiveProfile({ apiKey: e.target.value })}
                     onBlur={(e) => commitActiveProfilePatch({ apiKey: e.target.value })}
                     type={showApiKey ? 'text' : 'password'}
-                    placeholder={activeProfile.provider === 'fal' ? 'FAL_KEY' : 'sk-...'}
+                    placeholder="输入您的 SSXZ API Key"
                     className="w-full rounded-xl border border-gray-200/70 bg-white/60 px-3 py-2.5 pr-10 text-sm text-gray-700 outline-none transition focus:border-blue-300 dark:border-white/[0.08] dark:bg-white/[0.03] dark:text-gray-200 dark:focus:border-blue-500/50"
                   />
                   <button
@@ -1553,15 +1520,11 @@ export default function SettingsModal() {
                       updateActiveProfile({ apiMode, model: nextModel }, true)
                     }}
                     options={[
-                      { label: 'Images API (/v1/images)', value: 'images' },
-                      { label: 'Responses API (/v1/responses)', value: 'responses' },
+                      { label: 'Images API (/v1/images/generations)', value: 'images' },
                     ]}
-                    disabled={activeProfileLocked}
+                    disabled
                     className="w-full rounded-xl border border-gray-200/70 bg-white/60 px-3 py-2.5 text-sm text-gray-700 outline-none transition focus:border-blue-300 dark:border-white/[0.08] dark:bg-white/[0.03] dark:text-gray-200 dark:focus:border-blue-500/50"
                   />
-                  <div data-selectable-text className="mt-1.5 text-xs text-gray-500 dark:text-gray-500">
-                    支持通过查询参数覆盖：<code className="rounded bg-gray-100 px-1 py-0.5 dark:bg-white/[0.06]">apiMode=images</code> 或 <code className="rounded bg-gray-100 px-1 py-0.5 dark:bg-white/[0.06]">apiMode=responses</code>。
-                  </div>
                 </div>
               )}
 
@@ -1570,28 +1533,14 @@ export default function SettingsModal() {
                 <span className="mb-1.5 block text-sm text-gray-600 dark:text-gray-300">
                   模型 ID
                 </span>
-                <input
+                <Select
                   value={activeProfile.model}
-                  onChange={(e) => updateActiveProfile({ model: e.target.value })}
-                  onBlur={(e) => commitActiveProfilePatch({ model: e.target.value })}
-                  type="text"
-                  disabled={activeProfileLocked}
-                  placeholder={activeProfile.provider === 'fal' ? DEFAULT_FAL_MODEL : getDefaultModelForMode(activeProfile.apiMode ?? DEFAULT_SETTINGS.apiMode)}
+                  onChange={(model) => updateActiveProfile({ model: String(model) }, true)}
+                  options={[...SSXZ_IMAGE_MODELS]}
                   className="w-full rounded-xl border border-gray-200/70 bg-white/60 px-3 py-2.5 text-sm text-gray-700 outline-none transition focus:border-blue-300 dark:border-white/[0.08] dark:bg-white/[0.03] dark:text-gray-200 dark:focus:border-blue-500/50"
                 />
                 <div data-selectable-text className="mt-1.5 text-xs text-gray-500 dark:text-gray-500">
-                  {activeProfile.provider === 'fal' ? (
-                    <>当前适配 <code className="rounded bg-gray-100 px-1 py-0.5 dark:bg-white/[0.06]">{DEFAULT_FAL_MODEL}</code>。</>
-                  ) : activeCustomProvider ? (
-                    <>当前使用 <code className="rounded bg-gray-100 px-1 py-0.5 dark:bg-white/[0.06]">{activeCustomProvider.name}</code>。</>
-                  ) : (activeProfile.apiMode ?? DEFAULT_SETTINGS.apiMode) === 'responses' ? (
-                    <>Responses API 需要使用支持 <code className="rounded bg-gray-100 px-1 py-0.5 dark:bg-white/[0.06]">image_generation</code> 工具的文本模型，例如 <code className="rounded bg-gray-100 px-1 py-0.5 dark:bg-white/[0.06]">{DEFAULT_RESPONSES_MODEL}</code>。</>
-                  ) : (
-                    <>Images API 需要使用 GPT Image 模型，例如 <code className="rounded bg-gray-100 px-1 py-0.5 dark:bg-white/[0.06]">{DEFAULT_IMAGES_MODEL}</code>。</>
-                  )}
-                  {activeProfile.provider === 'openai' && (
-                    <>支持通过查询参数覆盖：<code className="rounded bg-gray-100 px-1 py-0.5 dark:bg-white/[0.06]">?model=</code>。</>
-                  )}
+                  GPT-Image 支持 1K、2K、4K；Grok Imagine Image 使用 1K。
                 </div>
               </label>
 

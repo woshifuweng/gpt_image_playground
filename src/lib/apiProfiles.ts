@@ -30,6 +30,10 @@ const DEFAULT_API_URL_PATCH = isImportableConfigUrl(RAW_DEFAULT_API_URL)
 const DEFAULT_BASE_URL = DEFAULT_API_URL_PATCH?.baseUrl ?? ''
 export const DEFAULT_IMAGES_MODEL = 'gpt-image-2'
 export const DEFAULT_RESPONSES_MODEL = 'gpt-5.6-sol'
+export const SSXZ_IMAGE_MODELS = [
+  { label: 'GPT-Image (1K / 2K / 4K)', value: 'gpt-image-2' },
+  { label: 'Grok Imagine Image (1K)', value: 'grok-imagine-image' },
+] as const
 export const DEFAULT_FAL_BASE_URL = 'https://fal.run'
 export const DEFAULT_FAL_MODEL = 'openai/gpt-image-2'
 export const DEFAULT_OPENAI_PROFILE_ID = 'default-openai'
@@ -743,7 +747,7 @@ export function getCustomProviderDefinition(settings: Partial<AppSettings> | unk
 
 export function getApiProviderLabel(settings: Partial<AppSettings> | unknown, provider: ApiProvider): string {
   if (provider === 'fal') return 'fal.ai'
-  if (provider === 'openai') return 'OpenAI'
+  if (provider === 'openai') return 'SSXZ'
   if (provider === 'sb2api-async') return SUB2API_PROVIDER.name
   return getCustomProviderDefinition(settings, provider)?.name ?? provider
 }
