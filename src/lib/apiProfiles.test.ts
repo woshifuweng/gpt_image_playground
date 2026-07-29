@@ -5,6 +5,7 @@ import {
   DEFAULT_IMAGES_MODEL,
   DEFAULT_OPENAI_PROFILE_ID,
   DEFAULT_SETTINGS,
+  SSXZ_IMAGE_MODELS,
   createDefaultOpenAIProfile,
   createDefaultFalProfile,
   getActiveApiProfile,
@@ -38,6 +39,16 @@ describe('validateApiProfile', () => {
       apiKey: 'test-key',
       apiProxy: true,
     }))).toBe('缺少 API URL')
+  })
+})
+
+describe('SSXZ image models', () => {
+  it('uses only verified production image model IDs', () => {
+    expect(DEFAULT_IMAGES_MODEL).toBe('gpt-image-2')
+    expect(SSXZ_IMAGE_MODELS.map((model) => model.value)).toEqual([
+      'gpt-image-2',
+      'grok-imagine-image',
+    ])
   })
 })
 
