@@ -154,9 +154,8 @@ export default function Header() {
                 <>
                   <span className="min-w-0 truncate text-[17px] font-bold tracking-tight text-gray-800 dark:text-gray-100 sm:hidden" title={favoriteCollectionTitle}>{favoriteCollectionTitle}</span>
                   <a
-                    href="https://ssxzapi.com"
-                    target="_blank"
-                    rel="noopener noreferrer"
+                    href="/app"
+                    target="_top"
                     className="hidden text-lg font-bold tracking-tight text-gray-800 transition-colors hover:text-gray-600 dark:text-gray-100 dark:hover:text-gray-300 sm:inline"
                   >
                     SSXZ 图片工作台
@@ -164,9 +163,8 @@ export default function Header() {
                 </>
               ) : (
                 <a
-                  href="https://ssxzapi.com"
-                  target="_blank"
-                  rel="noopener noreferrer"
+                  href="/app"
+                  target="_top"
                   className="text-[17px] sm:text-lg font-bold tracking-tight text-gray-800 dark:text-gray-100 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
                 >
                   SSXZ 图片工作台
