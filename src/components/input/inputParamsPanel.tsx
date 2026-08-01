@@ -31,8 +31,6 @@ export default function InputParamsPanel({
   outputCompressionInput,
   setOutputCompressionInput,
   commitOutputCompression,
-  moderationHint,
-  moderationDisabled,
   agentAutoImageCount,
   outputImageLimit,
   nInput,
@@ -71,8 +69,6 @@ export default function InputParamsPanel({
   outputCompressionInput: string
   setOutputCompressionInput: (value: string) => void
   commitOutputCompression: () => void
-  moderationHint: HintTooltipState
-  moderationDisabled: boolean
   agentAutoImageCount: boolean
   outputImageLimit: number
   nInput: string
@@ -103,7 +99,7 @@ export default function InputParamsPanel({
         onTouchCancel={sizeHint.hide}
         onClick={sizeHint.show}
       >
-        <span className="text-gray-400 dark:text-gray-500 ml-1">尺寸</span>
+        <span className="text-gray-400 dark:text-gray-500 ml-1">分辨率</span>
         <button
           type="button"
           onClick={() => { dismissAllTooltips(); onOpenSizePicker() }}
@@ -182,8 +178,8 @@ export default function InputParamsPanel({
               setParams({ transparent_output: val === 'on', output_compression: null })
             }}
             options={[
-              { label: 'false', value: 'off' },
-              { label: 'true', value: 'on' },
+              { label: '关闭', value: 'off' },
+              { label: '开启', value: 'on' },
             ]}
             showValueTooltips={false}
             className={selectClass}
@@ -228,36 +224,6 @@ export default function InputParamsPanel({
       )}
       <label
         className="relative flex flex-col gap-0.5"
-        onMouseEnter={moderationHint.show}
-        onMouseLeave={moderationHint.hide}
-        onTouchStart={moderationHint.startTouch}
-        onTouchEnd={moderationHint.clearTimer}
-        onTouchCancel={moderationHint.hide}
-        onClick={moderationHint.show}
-      >
-        <span className="text-gray-400 dark:text-gray-500 ml-1">审核</span>
-        <Select
-          value={moderationDisabled ? 'auto' : params.moderation}
-          onChange={(val) => {
-            if (!moderationDisabled) setParams({ moderation: val as TaskParams['moderation'] })
-          }}
-          options={[
-            { label: 'auto', value: 'auto' },
-            { label: 'low', value: 'low' },
-          ]}
-          disabled={moderationDisabled}
-          showValueTooltips={false}
-          className={moderationDisabled
-            ? 'px-3 py-1.5 rounded-xl border border-gray-200/60 dark:border-white/[0.08] bg-gray-100/50 dark:bg-white/[0.05] opacity-50 cursor-not-allowed text-xs transition-all duration-200 shadow-sm'
-            : selectClass}
-        />
-        <ButtonTooltip
-          visible={moderationDisabled && moderationHint.visible}
-          text="fal.ai 不支持审核参数"
-        />
-      </label>
-      <label
-        className="relative flex flex-col gap-0.5"
         onMouseEnter={() => { showAgentNHint(); streamConcurrentHint.show() }}
         onMouseLeave={() => { hideNLimitHint(); streamConcurrentHint.hide() }}
         onTouchStart={() => { startAgentNHintTouch(); streamConcurrentHint.startTouch() }}
@@ -269,7 +235,7 @@ export default function InputParamsPanel({
         }}
         onClick={() => { showAgentNHint(); streamConcurrentHint.show() }}
       >
-        <span className="text-gray-400 dark:text-gray-500 ml-1">数量</span>
+        <span className="text-gray-400 dark:text-gray-500 ml-1">张数</span>
         <input
           value={nInput}
           onChange={(e) => handleNInputChange(e.target.value)}
