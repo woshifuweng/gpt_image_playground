@@ -4,6 +4,11 @@ import { usePreventBackgroundScroll } from '../hooks/usePreventBackgroundScroll'
 import ViewportTooltip from './ViewportTooltip'
 
 const TIERS: SizeTier[] = ['1K', '2K', '4K']
+const TIER_META: Record<SizeTier, { label: string }> = {
+  '1K': { label: '标准（1K）最高 1024 像素' },
+  '2K': { label: '高清（2K）最高 2048 像素' },
+  '4K': { label: '超清（4K）最高 3840 像素' },
+}
 const SIZE_LIMIT_TEXT = '由于模型限制，不符合要求的分辨率会被自动规整：\n宽高均为 16 的倍数，最大边长 3840px，宽高比不超过 3:1，总像素限制为 655360-8294400。'
 const CODEX_CLI_SIZE_LIMIT_TEXT = '由于模型和 Codex CLI 限制，不符合要求的分辨率会被自动规整：\n宽高均为 16 的倍数，宽高比不超过 3:1，分辨率不超过 1K。'
 const CLAMPED_SIZE_TEXT = '由于模型限制，原始分辨率已被自动规整'
@@ -284,11 +289,12 @@ export default function SizePickerModal({ currentSize, onSelect, onClose, allowA
                           }}
                         >
                           <button
-                            className={`${buttonClass(tier === item)} w-full disabled:cursor-not-allowed disabled:opacity-40`}
+                            className={`${buttonClass(tier === item)} w-full flex flex-col items-center py-2 disabled:cursor-not-allowed disabled:opacity-40`}
                             onClick={() => setTier(item)}
                             disabled={disabled}
                           >
-                            {item}
+                            <span className="font-semibold text-sm leading-tight">{item}</span>
+                            <span className="mt-0.5 text-[10px] leading-tight opacity-60">{TIER_META[item].label}</span>
                           </button>
                           <ViewportTooltip visible={tierHint === item} className="w-52 text-center">
                             Codex CLI 不支持 1K 以上的分辨率
