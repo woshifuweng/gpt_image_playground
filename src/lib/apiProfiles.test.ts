@@ -1538,6 +1538,24 @@ describe('custom providers', () => {
     expect(clamped.profiles[0].streamPartialImages).toBe(3)
   })
 
+  it('migrates the legacy SSXZ image endpoint to the same-origin endpoint', () => {
+    const imageSettings = normalizeSettings({
+      profiles: [createDefaultOpenAIProfile({
+        baseUrl: 'https://api.ssxzapi.com/v1/',
+        apiMode: 'images',
+      })],
+    })
+    const responsesSettings = normalizeSettings({
+      profiles: [createDefaultOpenAIProfile({
+        baseUrl: 'https://api.ssxzapi.com/v1',
+        apiMode: 'responses',
+      })],
+    })
+
+    expect(imageSettings.profiles[0].baseUrl).toBe('https://ssxzapi.com/v1')
+    expect(responsesSettings.profiles[0].baseUrl).toBe('https://api.ssxzapi.com/v1')
+  })
+
   it('normalizes supported reasoning efforts and ignores invalid values', () => {
     const supported = normalizeSettings({
       profiles: [createDefaultOpenAIProfile({ apiMode: 'responses', reasoningEffort: 'max' })],

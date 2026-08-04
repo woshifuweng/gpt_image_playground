@@ -28,6 +28,8 @@ const DEFAULT_API_URL_PATCH = isImportableConfigUrl(RAW_DEFAULT_API_URL)
   ? null
   : parseDefaultApiUrl(RAW_DEFAULT_API_URL || (DOCKER_DEPLOYMENT && DEFAULT_OPENAI_API_PROXY ? '' : OPENAI_DEFAULT_BASE_URL))
 const DEFAULT_BASE_URL = DEFAULT_API_URL_PATCH?.baseUrl ?? ''
+const LEGACY_SSXZ_IMAGE_BASE_URL = 'https://api.ssxzapi.com/v1'
+const SAME_ORIGIN_SSXZ_IMAGE_BASE_URL = 'https://ssxzapi.com/v1'
 export const DEFAULT_IMAGES_MODEL = 'gpt-image-2'
 export const DEFAULT_RESPONSES_MODEL = 'gpt-5.6-sol'
 export const SSXZ_IMAGE_MODELS = [
@@ -104,6 +106,14 @@ type ApiProfileProviderDraft = NonNullable<ApiProfile['providerDrafts']>[ApiProv
 
 function getDefaultStreamImages(provider: ApiProvider, apiMode: ApiMode): boolean {
   return provider === 'openai' && apiMode === 'responses'
+}
+
+function migrateLegacySsxzImageBaseUrl(baseUrl: string, apiMode: ApiMode): string {
+  if (apiMode !== 'images') return baseUrl
+  const normalized = baseUrl.trim().replace(/\/+$/, '')
+  return normalized === LEGACY_SSXZ_IMAGE_BASE_URL
+    ? SAME_ORIGIN_SSXZ_IMAGE_BASE_URL
+    : baseUrl
 }
 
 export { normalizeReasoningEffort, normalizeStreamPartialImages } from './defaultApiUrl'
@@ -558,7 +568,9 @@ export function normalizeApiProfile(
     name: typeof record.name === 'string' && record.name.trim() ? record.name : defaults.name,
     description: typeof record.description === 'string' && record.description.trim() ? record.description : undefined,
     provider,
-    baseUrl: provider === 'fal' ? rawBaseUrl.trim().replace(/\/+$/, '') : rawBaseUrl,
+    baseUrl: provider === 'fal'
+      ? rawBaseUrl.trim().replace(/\/+$/, '')
+      : migrateLegacySsxzImageBaseUrl(rawBaseUrl, apiMode),
     apiKey: typeof record.apiKey === 'string' ? record.apiKey : defaults.apiKey,
     model: typeof record.model === 'string' && record.model.trim() ? record.model : defaults.model,
     timeout: typeof record.timeout === 'number' && Number.isFinite(record.timeout) ? record.timeout : defaults.timeout,
