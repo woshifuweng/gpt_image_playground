@@ -28,8 +28,10 @@ const DEFAULT_API_URL_PATCH = isImportableConfigUrl(RAW_DEFAULT_API_URL)
   ? null
   : parseDefaultApiUrl(RAW_DEFAULT_API_URL || (DOCKER_DEPLOYMENT && DEFAULT_OPENAI_API_PROXY ? '' : OPENAI_DEFAULT_BASE_URL))
 const DEFAULT_BASE_URL = DEFAULT_API_URL_PATCH?.baseUrl ?? ''
-const LEGACY_SSXZ_IMAGE_BASE_URL = 'https://api.ssxzapi.com/v1'
-const SAME_ORIGIN_SSXZ_IMAGE_BASE_URL = 'https://ssxzapi.com/v1'
+const SSXZ_IMAGE_BASE_URLS = new Set([
+  'https://api.ssxzapi.com/v1',
+  'https://ssxzapi.com/v1',
+])
 export const DEFAULT_IMAGES_MODEL = 'gpt-image-2'
 export const DEFAULT_RESPONSES_MODEL = 'gpt-5.6-sol'
 export const SSXZ_IMAGE_MODELS = [
@@ -111,9 +113,14 @@ function getDefaultStreamImages(provider: ApiProvider, apiMode: ApiMode): boolea
 function migrateLegacySsxzImageBaseUrl(baseUrl: string, apiMode: ApiMode): string {
   if (apiMode !== 'images') return baseUrl
   const normalized = baseUrl.trim().replace(/\/+$/, '')
-  return normalized === LEGACY_SSXZ_IMAGE_BASE_URL
-    ? SAME_ORIGIN_SSXZ_IMAGE_BASE_URL
-    : baseUrl
+  if (!SSXZ_IMAGE_BASE_URLS.has(normalized)) return baseUrl
+
+  // 图片工作台会被嵌在 api.ssxzapi.com 或 ssxzapi.com 下；两者都应请求
+  // 当前页面自己的 /v1，避免跨域，也不能把 api.ssxzapi.com 错改成旧域名。
+  if (typeof window !== 'undefined' && window.location.origin) {
+    return `${window.location.origin}/v1`
+  }
+  return 'https://api.ssxzapi.com/v1'
 }
 
 export { normalizeReasoningEffort, normalizeStreamPartialImages } from './defaultApiUrl'

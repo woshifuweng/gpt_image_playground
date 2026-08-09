@@ -1538,7 +1538,7 @@ describe('custom providers', () => {
     expect(clamped.profiles[0].streamPartialImages).toBe(3)
   })
 
-  it('migrates the legacy SSXZ image endpoint to the same-origin endpoint', () => {
+  it('keeps the SSXZ image endpoint on the current first-party origin', () => {
     const imageSettings = normalizeSettings({
       profiles: [createDefaultOpenAIProfile({
         baseUrl: 'https://api.ssxzapi.com/v1/',
@@ -1552,7 +1552,7 @@ describe('custom providers', () => {
       })],
     })
 
-    expect(imageSettings.profiles[0].baseUrl).toBe('https://ssxzapi.com/v1')
+    expect(imageSettings.profiles[0].baseUrl).toBe('https://api.ssxzapi.com/v1')
     expect(responsesSettings.profiles[0].baseUrl).toBe('https://api.ssxzapi.com/v1')
   })
 
