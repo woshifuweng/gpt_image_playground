@@ -3,6 +3,12 @@ import { useStore, reuseConfig, editOutputs, removeTask, taskMatchesFilterStatus
 import { ALL_FAVORITES_COLLECTION_ID, getTaskFavoriteCollectionIds } from '../lib/favoriteState'
 import TaskCard from './TaskCard'
 
+const EMPTY_PROMPTS = [
+  '一只橘猫坐在咖啡馆窗台，午后阳光温暖',
+  '极简风商业产品图，白色背景，高光反射',
+  '赛博朋克城市夜景，霓虹灯在雨中倒影',
+]
+
 export default function TaskGrid() {
   const tasks = useStore((s) => s.tasks)
   const searchQuery = useStore((s) => s.searchQuery)
@@ -12,6 +18,7 @@ export default function TaskGrid() {
   const defaultFavoriteCollectionId = useStore((s) => s.defaultFavoriteCollectionId)
   const setDetailTaskId = useStore((s) => s.setDetailTaskId)
   const setConfirmDialog = useStore((s) => s.setConfirmDialog)
+  const setPrompt = useStore((s) => s.setPrompt)
   const selectedTaskIds = useStore((s) => s.selectedTaskIds)
   const setSelectedTaskIds = useStore((s) => s.setSelectedTaskIds)
   const clearSelection = useStore((s) => s.clearSelection)
@@ -275,6 +282,18 @@ export default function TaskGrid() {
               />
             </svg>
             <p className="text-sm">输入提示词开始生成图片</p>
+            <div className="mx-auto mt-6 grid max-w-3xl gap-3 px-4 sm:grid-cols-3">
+              {EMPTY_PROMPTS.map((prompt) => (
+                <button
+                  type="button"
+                  key={prompt}
+                  onClick={() => setPrompt(prompt)}
+                  className="rounded-xl border border-gray-200/70 bg-white/60 p-4 text-left text-xs text-gray-600 transition-colors hover:border-gray-400 hover:bg-white dark:border-white/[0.08] dark:bg-white/[0.03] dark:text-gray-300 dark:hover:border-white/20 dark:hover:bg-white/[0.06]"
+                >
+                  {prompt}
+                </button>
+              ))}
+            </div>
           </>
         )}
       </div>

@@ -183,10 +183,36 @@ export default function Select({ value, onChange, onReorder, options, disabled, 
       <div
         ref={triggerRef}
         {...(showValueTooltips ? triggerTooltip.handlers : {})}
+        role="combobox"
+        aria-expanded={isOpen}
+        aria-haspopup="listbox"
+        aria-disabled={disabled}
+        tabIndex={disabled ? -1 : 0}
         onClick={(e) => {
           if (showValueTooltips) triggerTooltip.handlers.onClick?.()
           handleToggle(e)
           triggerTooltip.dismiss()
+        }}
+        onKeyDown={(e) => {
+          if (disabled) return
+          if (e.key === 'Tab' && isOpen) {
+            setIsOpen(false)
+            return
+          }
+          if (e.key === 'Escape') {
+            setIsOpen(false)
+            return
+          }
+          if (e.key !== 'Enter' && e.key !== ' ' && e.key !== 'ArrowDown') return
+          e.preventDefault()
+          if (isOpen) return
+          setIsOpen(true)
+          window.requestAnimationFrame(() => {
+            const optionElements = Array.from(containerRef.current?.querySelectorAll<HTMLElement>('[role="option"]') ?? [])
+            const selectedElement = optionElements.find((element) => element.dataset.optionValue === String(value))
+            const optionToFocus = selectedElement ?? optionElements[0]
+            optionToFocus?.focus()
+          })
         }}
         className={`flex items-center justify-between gap-1 w-full cursor-pointer select-none ${className ?? ''} ${
           disabled ? '!opacity-50 !cursor-not-allowed !bg-gray-100/50 dark:!bg-white/[0.05]' : ''
@@ -203,6 +229,7 @@ export default function Select({ value, onChange, onReorder, options, disabled, 
 
       {isOpen && (
         <div
+          role="listbox"
           className={`absolute z-50 w-full overflow-hidden overflow-y-auto rounded-xl border border-gray-200/60 bg-white/95 py-1 shadow-[0_8px_30px_rgb(0,0,0,0.12)] ring-1 ring-black/5 backdrop-blur-xl dark:border-white/[0.08] dark:bg-gray-900/95 dark:shadow-[0_8px_30px_rgb(0,0,0,0.3)] dark:ring-white/10 custom-scrollbar ${
             placement === 'top' ? 'bottom-full mb-1.5 animate-dropdown-up' : 'top-full mt-1.5 animate-dropdown-down'
           }`}
@@ -211,6 +238,9 @@ export default function Select({ value, onChange, onReorder, options, disabled, 
           {options.map((option) => (
             <div
               key={option.value}
+              role="option"
+              aria-selected={option.value === value}
+              tabIndex={option.value === value ? 0 : -1}
               data-option-value={String(option.value)}
               draggable={option.draggable}
               onDragStart={(e) => {
@@ -392,6 +422,33 @@ export default function Select({ value, onChange, onReorder, options, disabled, 
                 clearOptionTooltipTimer()
                 setHoveredOptionTooltip(null)
               }}
+              onKeyDown={(e) => {
+                if (e.key === 'Tab') {
+                  setIsOpen(false)
+                  return
+                }
+                if (e.key === 'Escape') {
+                  e.preventDefault()
+                  setIsOpen(false)
+                  triggerRef.current?.focus()
+                  return
+                }
+                if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+                  e.preventDefault()
+                  const optionElements = Array.from(containerRef.current?.querySelectorAll<HTMLElement>('[role="option"]') ?? [])
+                  const currentIndex = optionElements.indexOf(e.currentTarget)
+                  const offset = e.key === 'ArrowDown' ? 1 : -1
+                  optionElements[(currentIndex + offset + optionElements.length) % optionElements.length]?.focus()
+                  return
+                }
+                if (e.key !== 'Enter' && e.key !== ' ') return
+                e.preventDefault()
+                onChange(option.value)
+                setIsOpen(false)
+                clearOptionTooltipTimer()
+                setHoveredOptionTooltip(null)
+                triggerRef.current?.focus()
+              }}
               onMouseEnter={() => showValueTooltips && setHoveredOptionTooltip(option.value)}
               onMouseLeave={() => {
                 clearOptionTooltipTimer()
@@ -402,7 +459,7 @@ export default function Select({ value, onChange, onReorder, options, disabled, 
                 clearOptionTooltipTimer()
                 setHoveredOptionTooltip(null)
               }}
-              className={`relative flex cursor-pointer items-center justify-between gap-2 px-3 py-2 text-xs transition-colors ${
+              className={`relative flex min-h-9 cursor-pointer items-center justify-between gap-2 px-3 py-2 text-xs transition-colors ${
                 draggedValue === option.value
                   ? 'opacity-40 bg-gray-100 dark:bg-white/[0.04]'
                   : option.variant === 'action'
@@ -454,7 +511,7 @@ export default function Select({ value, onChange, onReorder, options, disabled, 
                         action.onClick()
                         setIsOpen(false)
                       }}
-                      className={`rounded-md p-1.5 transition flex items-center justify-center ${action.variant === 'danger'
+                      className={`flex h-5 w-5 shrink-0 items-center justify-center rounded transition ${action.variant === 'danger'
                         ? 'text-red-500 hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-500/10'
                         : 'text-gray-400 hover:bg-gray-100 hover:text-gray-600 dark:hover:bg-white/[0.08] dark:hover:text-gray-200'}`}
                     >

@@ -1,0 +1,22 @@
+{
+  "customProviders": [],
+  "profiles": [
+    {
+      "id": "default-openai",
+      "name": "SSXZ GPT-Image",
+      "provider": "openai",
+      "baseUrl": "https://api.ssxzapi.com/v1",
+      "model": "gpt-image-2",
+      "apiMode": "images",
+      "isDefault": true
+    },
+    {
+      "id": "ssxz-grok-imagine",
+      "name": "SSXZ Grok Imagine",
+      "provider": "openai",
+      "baseUrl": "https://api.ssxzapi.com/v1",
+      "model": "grok-imagine-image",
+      "apiMode": "images"
+    }
+  ]
+}
