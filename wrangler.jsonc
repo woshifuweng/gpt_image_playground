@@ -2,6 +2,8 @@
   "$schema": "node_modules/wrangler/config-schema.json",
   "name": "gpt-image-playground",
   "compatibility_date": "2026-05-07",
+  "workers_dev": true,
+  "preview_urls": false,
   "routes": [
     {
       "pattern": "image.ssxzapi.com",
