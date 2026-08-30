@@ -12,7 +12,7 @@ afterEach(() => {
   vi.unstubAllEnvs()
 })
 
-async function importPresetConfigOnlyUrlSettings(options: { locked?: boolean, multiple?: boolean } = {}) {
+async function importPresetConfigOnlyUrlSettings(options: { locked?: boolean, multiple?: boolean, ssxz?: boolean } = {}) {
   vi.resetModules()
   vi.stubEnv('VITE_SHOW_PRESET_CONFIG_ONLY', 'true')
   if (options.locked) vi.stubEnv('VITE_LOCK_PRESET_CONFIG_PARAMS', 'true')
@@ -21,7 +21,12 @@ async function importPresetConfigOnlyUrlSettings(options: { locked?: boolean, mu
   const presetConfig = await import('./presetConfig')
   presetConfig.setPresetConfig({
     customProviders: [],
-    profiles: options.multiple
+    profiles: options.ssxz
+      ? [
+          apiProfiles.createDefaultOpenAIProfile({ id: apiProfiles.SSXZ_IMAGE_PROFILE_IDS[0], name: 'SSXZ GPT-Image', isDefault: true }),
+          apiProfiles.createDefaultOpenAIProfile({ id: apiProfiles.SSXZ_IMAGE_PROFILE_IDS[1], name: 'SSXZ Grok Imagine' }),
+        ]
+      : options.multiple
       ? [
           apiProfiles.createDefaultOpenAIProfile({ id: 'preset-a', name: 'Preset A', isDefault: true }),
           apiProfiles.createDefaultOpenAIProfile({ id: 'preset-b', name: 'Preset B' }),
@@ -919,6 +924,25 @@ describe('URL settings params', () => {
       model: current.profiles[0].model,
       transparentBackgroundMethod: 'api',
     })
+  })
+
+  it('shares an imported URL API key across locked SSXZ image presets', async () => {
+    const { buildSettingsFromUrlParams } = await importPresetConfigOnlyUrlSettings({ locked: true, ssxz: true })
+    const current = normalizeSettings({
+      ...DEFAULT_SETTINGS,
+      profiles: [
+        createDefaultOpenAIProfile({ id: 'default-openai', name: 'SSXZ GPT-Image', isDefault: true }),
+        createDefaultOpenAIProfile({ id: 'ssxz-grok-imagine', name: 'SSXZ Grok Imagine' }),
+      ],
+      activeProfileId: 'default-openai',
+    })
+    const next = normalizeSettings({
+      ...current,
+      ...buildSettingsFromUrlParams(current, new URLSearchParams('apiKey=url-shared-key')),
+    })
+
+    expect(next.profiles.find((profile) => profile.id === 'default-openai')?.apiKey).toBe('url-shared-key')
+    expect(next.profiles.find((profile) => profile.id === 'ssxz-grok-imagine')?.apiKey).toBe('url-shared-key')
   })
 
   it('ignores an invalid explicit profileId in preset-only mode', async () => {

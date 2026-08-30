@@ -9,6 +9,8 @@ import {
   normalizeSettings,
   normalizeReasoningEffort,
   normalizeStreamPartialImages,
+  isSsxzImageProfileId,
+  withSharedSsxzImageApiKey,
 } from './apiProfiles'
 import { isPresetConfigOnlyEnabled, isPresetConfigParamsLocked, isPresetProfile } from './presetConfig'
 
@@ -220,13 +222,16 @@ function buildPresetConfigOnlySettingsFromUrlParams(currentSettings: Partial<App
 
   if (Object.keys(patch).length === 0 && !requestedProfile) return {}
 
-  return normalizeSettings({
+  const nextSettings = normalizeSettings({
     ...settings,
     profiles: settings.profiles.map((profile) =>
       profile.id === targetProfile.id ? { ...profile, ...patch, provider: profile.provider } : profile,
     ),
     activeProfileId: requestedProfile?.id ?? settings.activeProfileId,
   })
+  return patch.apiKey !== undefined && isSsxzImageProfileId(targetProfile.id)
+    ? withSharedSsxzImageApiKey(nextSettings, patch.apiKey)
+    : nextSettings
 }
 
 export function hasUrlSettingParams(searchParams: URLSearchParams) {
