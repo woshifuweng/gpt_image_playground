@@ -72,5 +72,19 @@ export default defineConfig(async ({ command, mode }) => {
             }
           : undefined,
     },
+    build: {
+      chunkSizeWarningLimit: 700,
+      rollupOptions: {
+        output: {
+          manualChunks(id) {
+            if (!id.includes('node_modules')) return undefined
+            if (/node_modules\/(react|react-dom|scheduler|zustand)\//.test(id)) return 'react-vendor'
+            if (/node_modules\/(@fal-ai|@msgpack|fflate)\//.test(id)) return 'image-tools'
+            if (id.includes('node_modules/core-js/')) return 'compat'
+            return undefined
+          },
+        },
+      },
+    },
   }
 })
