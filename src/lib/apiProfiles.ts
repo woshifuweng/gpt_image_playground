@@ -32,6 +32,10 @@ const SSXZ_IMAGE_BASE_URLS = new Set([
   'https://api.ssxzapi.com/v1',
   'https://ssxzapi.com/v1',
 ])
+const SSXZ_FIRST_PARTY_ORIGINS = new Set([
+  'https://api.ssxzapi.com',
+  'https://ssxzapi.com',
+])
 export const DEFAULT_IMAGES_MODEL = 'gpt-image-2'
 export const DEFAULT_RESPONSES_MODEL = 'gpt-5.6-sol'
 export const SSXZ_IMAGE_MODELS = [
@@ -115,12 +119,12 @@ function migrateLegacySsxzImageBaseUrl(baseUrl: string, apiMode: ApiMode): strin
   const normalized = baseUrl.trim().replace(/\/+$/, '')
   if (!SSXZ_IMAGE_BASE_URLS.has(normalized)) return baseUrl
 
-  // 图片工作台会被嵌在 api.ssxzapi.com 或 ssxzapi.com 下；两者都应请求
-  // 当前页面自己的 /v1，避免跨域，也不能把 api.ssxzapi.com 错改成旧域名。
-  if (typeof window !== 'undefined' && window.location.origin) {
+  // 只有运行在 SSXZ 自有域名时才走同源 /v1。本地预览或第三方部署继续
+  // 请求预置的 API 域名，避免被误改为 localhost/v1 或未知站点的 /v1。
+  if (typeof window !== 'undefined' && SSXZ_FIRST_PARTY_ORIGINS.has(window.location.origin)) {
     return `${window.location.origin}/v1`
   }
-  return 'https://api.ssxzapi.com/v1'
+  return normalized
 }
 
 export { normalizeReasoningEffort, normalizeStreamPartialImages } from './defaultApiUrl'

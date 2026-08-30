@@ -26,6 +26,7 @@ import { CUSTOM_PROVIDER_LLM_PROMPT, DEFAULT_CUSTOM_PROVIDER_JSON } from './sett
 
 afterEach(() => {
   vi.unstubAllEnvs()
+  vi.unstubAllGlobals()
 })
 
 describe('validateApiProfile', () => {
@@ -1554,6 +1555,27 @@ describe('custom providers', () => {
 
     expect(imageSettings.profiles[0].baseUrl).toBe('https://api.ssxzapi.com/v1')
     expect(responsesSettings.profiles[0].baseUrl).toBe('https://api.ssxzapi.com/v1')
+  })
+
+  it('uses same-origin image requests only on SSXZ first-party domains', () => {
+    vi.stubGlobal('window', { location: { origin: 'https://ssxzapi.com' } })
+    const firstPartySettings = normalizeSettings({
+      profiles: [createDefaultOpenAIProfile({
+        baseUrl: 'https://api.ssxzapi.com/v1',
+        apiMode: 'images',
+      })],
+    })
+
+    vi.stubGlobal('window', { location: { origin: 'http://127.0.0.1:4178' } })
+    const localPreviewSettings = normalizeSettings({
+      profiles: [createDefaultOpenAIProfile({
+        baseUrl: 'https://api.ssxzapi.com/v1',
+        apiMode: 'images',
+      })],
+    })
+
+    expect(firstPartySettings.profiles[0].baseUrl).toBe('https://ssxzapi.com/v1')
+    expect(localPreviewSettings.profiles[0].baseUrl).toBe('https://api.ssxzapi.com/v1')
   })
 
   it('normalizes supported reasoning efforts and ignores invalid values', () => {
