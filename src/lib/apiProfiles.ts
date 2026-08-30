@@ -45,7 +45,29 @@ export const SSXZ_IMAGE_MODELS = [
 export const DEFAULT_FAL_BASE_URL = 'https://fal.run'
 export const DEFAULT_FAL_MODEL = 'openai/gpt-image-2'
 export const DEFAULT_OPENAI_PROFILE_ID = 'default-openai'
+export const SSXZ_IMAGE_PROFILE_IDS = [DEFAULT_OPENAI_PROFILE_ID, 'ssxz-grok-imagine'] as const
+const SSXZ_IMAGE_PROFILE_ID_SET = new Set<string>(SSXZ_IMAGE_PROFILE_IDS)
 export const DEFAULT_API_TIMEOUT = 600
+
+export function isSsxzImageProfileId(profileId: string): boolean {
+  return SSXZ_IMAGE_PROFILE_ID_SET.has(profileId)
+}
+
+export function withSharedSsxzImageApiKey(settings: AppSettings, apiKey: string): AppSettings {
+  return {
+    ...settings,
+    profiles: settings.profiles.map((profile) =>
+      isSsxzImageProfileId(profile.id) ? { ...profile, apiKey } : profile,
+    ),
+  }
+}
+
+function synchronizeSsxzImageApiKey(settings: AppSettings): AppSettings {
+  const sharedApiKey = SSXZ_IMAGE_PROFILE_IDS
+    .map((profileId) => settings.profiles.find((profile) => profile.id === profileId)?.apiKey ?? '')
+    .find((apiKey) => apiKey.trim())
+  return sharedApiKey ? withSharedSsxzImageApiKey(settings, sharedApiKey) : settings
+}
 
 const BUILT_IN_PROVIDER_IDS = new Set<ApiProvider>(['openai', 'sb2api-async', 'fal'])
 const DEFAULT_CUSTOM_PROVIDER_PATHS = {
@@ -1226,13 +1248,15 @@ export function mergePresetImportedSettings(
     if (!sourceProfileIds.has(profile.id) && profiles.some((item) => item.id === profile.id)) presetProfiles.push(profile)
   }
 
+  const settings = normalizeSettings({
+    ...current,
+    customProviders,
+    profiles,
+    activeProfileId: replacingPristineDefault ? sourceDefaultProfileId ?? nextProfiles[0].id : current.activeProfileId,
+  })
+
   return {
-    settings: normalizeSettings({
-      ...current,
-      customProviders,
-      profiles,
-      activeProfileId: replacingPristineDefault ? sourceDefaultProfileId ?? nextProfiles[0].id : current.activeProfileId,
-    }),
+    settings: synchronizeSsxzImageApiKey(settings),
     presetConfig: {
       customProviders: presetProviders,
       profiles: presetProfiles,

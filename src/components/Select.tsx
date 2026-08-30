@@ -195,6 +195,10 @@ export default function Select({ value, onChange, onReorder, options, disabled, 
         }}
         onKeyDown={(e) => {
           if (disabled) return
+          if (e.key === 'Tab' && isOpen) {
+            setIsOpen(false)
+            return
+          }
           if (e.key === 'Escape') {
             setIsOpen(false)
             return
@@ -204,7 +208,10 @@ export default function Select({ value, onChange, onReorder, options, disabled, 
           if (isOpen) return
           setIsOpen(true)
           window.requestAnimationFrame(() => {
-            containerRef.current?.querySelector<HTMLElement>('[role="option"]')?.focus()
+            const optionElements = Array.from(containerRef.current?.querySelectorAll<HTMLElement>('[role="option"]') ?? [])
+            const selectedElement = optionElements.find((element) => element.dataset.optionValue === String(value))
+            const optionToFocus = selectedElement ?? optionElements[0]
+            optionToFocus?.focus()
           })
         }}
         className={`flex items-center justify-between gap-1 w-full cursor-pointer select-none ${className ?? ''} ${
@@ -233,7 +240,7 @@ export default function Select({ value, onChange, onReorder, options, disabled, 
               key={option.value}
               role="option"
               aria-selected={option.value === value}
-              tabIndex={0}
+              tabIndex={option.value === value ? 0 : -1}
               data-option-value={String(option.value)}
               draggable={option.draggable}
               onDragStart={(e) => {
@@ -416,6 +423,10 @@ export default function Select({ value, onChange, onReorder, options, disabled, 
                 setHoveredOptionTooltip(null)
               }}
               onKeyDown={(e) => {
+                if (e.key === 'Tab') {
+                  setIsOpen(false)
+                  return
+                }
                 if (e.key === 'Escape') {
                   e.preventDefault()
                   setIsOpen(false)

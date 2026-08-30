@@ -6,6 +6,7 @@ import {
   DEFAULT_OPENAI_PROFILE_ID,
   DEFAULT_SETTINGS,
   SSXZ_IMAGE_MODELS,
+  SSXZ_IMAGE_PROFILE_IDS,
   createDefaultOpenAIProfile,
   createDefaultFalProfile,
   getApiProviderLabel,
@@ -15,12 +16,14 @@ import {
   importCustomProviderDefinitionFromJson,
   importCustomProviderSettingsFromJson,
   getDefaultApiProfileId,
+  isSsxzImageProfileId,
   mergePresetImportedSettings as mergeDefaultImportedSettings,
   mergeImportedSettings,
   normalizeApiProfile,
   normalizeSettings,
   switchApiProfileProvider,
   validateApiProfile,
+  withSharedSsxzImageApiKey,
 } from './apiProfiles'
 import { CUSTOM_PROVIDER_LLM_PROMPT, DEFAULT_CUSTOM_PROVIDER_JSON } from './settingsCustomProvider'
 
@@ -665,6 +668,61 @@ describe('mergePresetImportedSettings', () => {
 
     expect(updated.profiles[0]).toMatchObject({ apiKey: 'user-key', model: 'model-v2' })
     expect(cleared.profiles[0].apiKey).toBe('user-key')
+  })
+
+  it('preserves the legacy default profile key and shares it with both SSXZ image presets', () => {
+    const current = normalizeSettings({
+      ...DEFAULT_SETTINGS,
+      profiles: [createDefaultOpenAIProfile({
+        id: DEFAULT_OPENAI_PROFILE_ID,
+        apiKey: 'legacy-user-key',
+        isDefault: true,
+      })],
+      activeProfileId: DEFAULT_OPENAI_PROFILE_ID,
+    })
+    const config = {
+      customProviders: [],
+      profiles: [
+        createDefaultOpenAIProfile({
+          id: DEFAULT_OPENAI_PROFILE_ID,
+          name: 'SSXZ GPT-Image',
+          baseUrl: 'https://api.ssxzapi.com/v1',
+          model: 'gpt-image-2',
+          isDefault: true,
+        }),
+        createDefaultOpenAIProfile({
+          id: SSXZ_IMAGE_PROFILE_IDS[1],
+          name: 'SSXZ Grok Imagine',
+          baseUrl: 'https://api.ssxzapi.com/v1',
+          model: 'grok-imagine-image',
+        }),
+      ],
+    }
+
+    const merged = mergeDefaultImportedSettings(current, config, { lockPresetParams: true }).settings
+
+    expect(merged.profiles.filter((profile) => isSsxzImageProfileId(profile.id)))
+      .toHaveLength(2)
+    expect(merged.profiles.find((profile) => profile.id === DEFAULT_OPENAI_PROFILE_ID)?.apiKey).toBe('legacy-user-key')
+    expect(merged.profiles.find((profile) => profile.id === SSXZ_IMAGE_PROFILE_IDS[1])?.apiKey).toBe('legacy-user-key')
+  })
+
+  it('updates both SSXZ image presets without changing unrelated profile credentials', () => {
+    const unrelated = createDefaultFalProfile({ id: 'unrelated-profile', apiKey: 'unrelated-key' })
+    const settings = normalizeSettings({
+      ...DEFAULT_SETTINGS,
+      profiles: [
+        createDefaultOpenAIProfile({ id: DEFAULT_OPENAI_PROFILE_ID, apiKey: 'old-key', isDefault: true }),
+        createDefaultOpenAIProfile({ id: SSXZ_IMAGE_PROFILE_IDS[1], apiKey: '' }),
+        unrelated,
+      ],
+    })
+
+    const updated = withSharedSsxzImageApiKey(settings, 'new-shared-key')
+
+    expect(updated.profiles.find((profile) => profile.id === DEFAULT_OPENAI_PROFILE_ID)?.apiKey).toBe('new-shared-key')
+    expect(updated.profiles.find((profile) => profile.id === SSXZ_IMAGE_PROFILE_IDS[1])?.apiKey).toBe('new-shared-key')
+    expect(updated.profiles.find((profile) => profile.id === unrelated.id)?.apiKey).toBe('unrelated-key')
   })
 
   it('preserves the saved profile order while updating locked presets by ID', () => {

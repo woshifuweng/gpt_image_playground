@@ -26,7 +26,9 @@ import {
   normalizeCustomProviderDefinition,
   normalizeSettings,
   normalizeStreamPartialImages,
+  isSsxzImageProfileId,
   switchApiProfileProvider,
+  withSharedSsxzImageApiKey,
 } from '../lib/apiProfiles'
 import {
   getDefaultPresetBaseUrl,
@@ -482,10 +484,15 @@ export default function SettingsModal() {
     setCopyImportUrlOptions(readCopyImportUrlOptions())
   }
 
-  const getDraftWithActiveProfilePatch = (patch: Partial<ApiProfile>) => ({
+  const getDraftWithActiveProfilePatch = (patch: Partial<ApiProfile>) => {
+    const nextDraft = {
       ...draft,
       profiles: draft.profiles.map((profile) => profile.id === activeProfile.id ? { ...profile, ...patch } : profile),
-    })
+    }
+    return patch.apiKey !== undefined && isSsxzImageProfileId(activeProfile.id)
+      ? withSharedSsxzImageApiKey(nextDraft, patch.apiKey)
+      : nextDraft
+  }
 
   const updateActiveProfile = (patch: Partial<ApiProfile>, commit = false) => {
     if (activeProfileLocked && (Object.keys(patch).length !== 1 || patch.apiKey === undefined)) return
